@@ -49,8 +49,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         switch row.kind {
         case "session": return L.s.session
         case "weekly_all": return L.s.weeklyAll
-        default: return row.scopeName ?? L.s.scopedFallback
+        default: return modelName(row.scopeName)
         }
+    }
+
+    /// The API reports the model without its version; the product is Fable 5.
+    /// Any other name is passed through untouched.
+    nonisolated static func modelName(_ scopeName: String?) -> String {
+        guard let scopeName else { return L.s.scopedFallback }
+        return scopeName == "Fable" ? "Fable 5" : scopeName
     }
 
     /// Language names stay in their own language; only "Automatic" is translated.

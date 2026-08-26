@@ -20,7 +20,7 @@ The same three limits as the Usage screen in Claude Code:
 |---|---|
 | **Session** | The current 5-hour window |
 | **All models** | The weekly limit across every model |
-| **Fable** | The weekly limit for one specific model |
+| **Fable 5** | The weekly limit for one specific model |
 
 Each number is colored by the severity the API reports: normal label color, orange on `warning`, red on `critical`.
 
@@ -73,7 +73,7 @@ Authorization: Bearer <token>
 anthropic-beta: oauth-2025-04-20
 ```
 
-Percentages come from the `limits` array rather than top-level fields like `seven_day_opus`, which the API returns as `null`. The scoped limit's label is read from `scope.model.display_name`, so renaming the model needs no code change.
+Percentages come from the `limits` array rather than top-level fields like `seven_day_opus`, which the API returns as `null`. The scoped limit's label is read from `scope.model.display_name`, so renaming the model needs no code change — the one exception being `Fable`, which is shown as `Fable 5` because the API omits the version.
 
 The app never refreshes the token itself: Claude Code does that, and the keychain is re-read on every poll.
 

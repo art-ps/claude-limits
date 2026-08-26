@@ -38,7 +38,8 @@ func runSelfTest() {
 
     L.preference = .en
     assert(AppDelegate.title(for: rows[0]) == "Session")
-    assert(AppDelegate.title(for: rows[2]) == "Fable", "scoped title comes from the API, not a translation")
+    assert(AppDelegate.title(for: rows[2]) == "Fable 5", "\"Fable\" is shown with its version")
+    assert(AppDelegate.modelName("Opus 5") == "Opus 5", "other model names pass through untouched")
     assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-4260)) == "1 h 11 min")
     assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-1800)) == "30 min")
     assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(60)) == "0 min")
