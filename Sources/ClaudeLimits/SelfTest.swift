@@ -28,6 +28,9 @@ func runSelfTest() {
     assert(AppDelegate.color(for: "warning") == .systemOrange)
     assert(AppDelegate.color(for: "critical") == .systemRed)
     assert(AppDelegate.color(for: "brand_new_severity") == .labelColor)
+    assert(AppDelegate.progressColor(for: "normal") == .controlAccentColor)
+    assert(AppDelegate.progressColor(for: "critical") == .systemRed)
+    assert(AppDelegate.progressBarImage(percent: 58, severity: "normal").size.width == 210)
 
     let reset = rows[0].resetsAt!
     assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-4260)) == "1 ч 11 мин")

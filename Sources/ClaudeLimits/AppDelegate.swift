@@ -90,6 +90,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let reset = Self.remaining(until: row.resetsAt)
             let suffix = reset.isEmpty ? "" : " · \(reset)"
             menu.addItem(disabledItem("\(row.title) — \(row.percent)%\(suffix)"))
+
+            let bar = disabledItem("")
+            bar.image = Self.progressBarImage(percent: row.percent, severity: row.severity)
+            menu.addItem(bar)
         }
 
         if rows.isEmpty && lastError == nil {
@@ -182,6 +186,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             ))
         }
         return title
+    }
+
+    /// Wide progress bar shown under a limit's row in the menu.
+    nonisolated static func progressBarImage(percent: Int, severity: String) -> NSImage {
+        let width: CGFloat = 210
+        let height: CGFloat = 5
+        let radius = height / 2
+        let paint = progressColor(for: severity)
+
+        return NSImage(size: NSSize(width: width, height: height), flipped: false) { _ in
+            // Fixed gray track: it stays readable on both light and dark menus without
+            // depending on how a dynamic color resolves inside an image handler.
+            NSColor(white: 0.5, alpha: 0.3).setFill()
+            NSBezierPath(
+                roundedRect: NSRect(x: 0, y: 0, width: width, height: height),
+                xRadius: radius, yRadius: radius
+            ).fill()
+
+            paint.setFill()
+            NSBezierPath(
+                roundedRect: NSRect(x: 0, y: 0, width: max(height, width * CGFloat(percent) / 100), height: height),
+                xRadius: radius, yRadius: radius
+            ).fill()
+            return true
+        }
+    }
+
+    nonisolated static func progressColor(for severity: String) -> NSColor {
+        switch severity {
+        case "warning": return .systemOrange
+        case "critical": return .systemRed
+        default: return .controlAccentColor
+        }
     }
 
     /// `.labelColor` keeps the default numbers legible on both light and dark menu bars.
