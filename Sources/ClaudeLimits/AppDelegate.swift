@@ -45,6 +45,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    nonisolated static func title(for row: LimitRow) -> String {
+        switch row.kind {
+        case "session": return L.s.session
+        case "weekly_all": return L.s.weeklyAll
+        default: return row.scopeName ?? L.s.scopedFallback
+        }
+    }
+
+    /// Language names stay in their own language; only "Automatic" is translated.
+    nonisolated static func displayName(for language: Language) -> String {
+        switch language {
+        case .auto: return L.s.languageAuto
+        case .en: return "English"
+        case .ru: return "Русский"
+        }
+    }
+
+    @objc private func selectLanguage(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let language = Language(rawValue: raw)
+        else { return }
+        L.preference = language
+        render()
+    }
+
     private var showsBars: Bool {
         get { UserDefaults.standard.bool(forKey: "showsBars") }
         set { UserDefaults.standard.set(newValue, forKey: "showsBars") }
@@ -63,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 try SMAppService.mainApp.register()
             }
         } catch {
-            lastError = "Автозапуск: \(error.localizedDescription)"
+            lastError = "\(L.s.launchFailed): \(error.localizedDescription)"
         }
         render()
     }
@@ -83,13 +108,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.removeAllItems()
 
         if let lastError {
-            menu.addItem(disabledItem("Ошибка: \(lastError)"))
+            menu.addItem(disabledItem("\(L.s.errorPrefix): \(lastError)"))
         }
 
         for row in rows {
             let reset = Self.remaining(until: row.resetsAt)
             let suffix = reset.isEmpty ? "" : " · \(reset)"
-            menu.addItem(disabledItem("\(row.title) — \(row.percent)%\(suffix)"))
+            menu.addItem(disabledItem("\(Self.title(for: row)) — \(row.percent)%\(suffix)"))
 
             let bar = disabledItem("")
             bar.image = Self.progressBarImage(percent: row.percent, severity: row.severity)
@@ -97,13 +122,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         if rows.isEmpty && lastError == nil {
-            menu.addItem(disabledItem("Загрузка…"))
+            menu.addItem(disabledItem(L.s.loading))
         }
 
         menu.addItem(.separator())
 
         let barsItem = menu.addItem(
-            withTitle: "Полоски вместо цифр",
+            withTitle: L.s.barsToggle,
             action: #selector(toggleBars),
             keyEquivalent: ""
         )
@@ -111,16 +136,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         barsItem.state = showsBars ? .on : .off
 
         let launchItem = menu.addItem(
-            withTitle: "Запускать при входе",
+            withTitle: L.s.launchAtLogin,
             action: #selector(toggleLaunchAtLogin),
             keyEquivalent: ""
         )
         launchItem.target = self
         launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
 
+        let languageItem = menu.addItem(withTitle: L.s.language, action: nil, keyEquivalent: "")
+        let languageMenu = NSMenu()
+        for language in Language.allCases {
+            let item = languageMenu.addItem(
+                withTitle: Self.displayName(for: language),
+                action: #selector(selectLanguage(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = language.rawValue
+            item.state = L.preference == language ? .on : .off
+        }
+        languageItem.submenu = languageMenu
+
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Обновить", action: #selector(refresh), keyEquivalent: "r").target = self
-        menu.addItem(withTitle: "Выход", action: #selector(quit), keyEquivalent: "q").target = self
+        menu.addItem(withTitle: L.s.refresh, action: #selector(refresh), keyEquivalent: "r").target = self
+        menu.addItem(withTitle: L.s.quit, action: #selector(quit), keyEquivalent: "q").target = self
     }
 
     /// Three progress bars shown in place of the numbers. `nil` when the numbers are shown.
@@ -242,6 +281,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let seconds = max(0, Int(date.timeIntervalSince(now)))
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
-        return hours > 0 ? "\(hours) ч \(minutes) мин" : "\(minutes) мин"
+        let strings = L.s
+        return hours > 0
+            ? "\(hours) \(strings.hours) \(minutes) \(strings.minutes)"
+            : "\(minutes) \(strings.minutes)"
     }
 }

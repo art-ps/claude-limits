@@ -27,6 +27,12 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleIdentifier</key>      <string>in.pisarev.ClaudeLimits</string>
     <key>CFBundleExecutable</key>      <string>ClaudeLimits</string>
     <key>CFBundleIconFile</key>        <string>AppIcon</string>
+    <key>CFBundleDevelopmentRegion</key> <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>ru</string>
+    </array>
     <key>CFBundlePackageType</key>     <string>APPL</string>
     <key>CFBundleShortVersionString</key> <string>$VERSION</string>
     <key>CFBundleVersion</key>         <string>$VERSION</string>

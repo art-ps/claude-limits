@@ -4,80 +4,84 @@
 
 # ClaudeLimits
 
-Лимиты Claude в меню-баре macOS. Три числа, обновление каждые 5 минут.
+Your Claude usage limits in the macOS menu bar. Three numbers, refreshed every five minutes.
 
-<img src="docs/menubar-numbers.png" height="26" alt="Режим цифр">
+<img src="docs/menubar-numbers.png" height="26" alt="Numbers mode">
 &nbsp;&nbsp;
-<img src="docs/menubar-bars.png" height="26" alt="Режим полосок">
+<img src="docs/menubar-bars.png" height="26" alt="Bars mode">
 
 </div>
 
-## Что показывает
+## What it shows
 
-Те же три лимита, что и экран Usage в Claude Code:
+The same three limits as the Usage screen in Claude Code:
 
-| Лимит | Что это |
+| Limit | What it covers |
 |---|---|
-| **Сессия** | Текущее 5-часовое окно |
-| **Все модели** | Недельный лимит по всем моделям |
-| **Fable** | Недельный лимит конкретной модели |
+| **Session** | The current 5-hour window |
+| **All models** | The weekly limit across every model |
+| **Fable** | The weekly limit for one specific model |
 
-Каждое число красится по уровню, который отдаёт API: обычный цвет текста, оранжевый при `warning`, красный при `critical`.
+Each number is colored by the severity the API reports: normal label color, orange on `warning`, red on `critical`.
 
-Клик по элементу раскрывает меню с процентами, временем до сброса и прогресс-баром под каждой строкой:
+Clicking the status item opens a menu with percentages, time until reset, and a progress bar under every row:
 
 <div align="center">
-<img src="docs/menu.png" width="380" alt="Меню приложения">
+<img src="docs/menu.png" width="380" alt="The app's menu">
 </div>
 
-**Полоски вместо цифр** — компактный режим: три мини-графика вместо чисел. **Запускать при входе** — автозапуск через `SMAppService`, состояние читается из системы.
+**Bars instead of numbers** switches the status item to a compact mode: three miniature charts in place of the digits. **Launch at login** registers the app through `SMAppService`, reading its state back from the system. **Language** overrides the interface language — see below.
 
-## Установка
+## Install
 
-Скачай `.dmg` из [релизов](../../releases) и перетащи приложение в `/Applications`.
+Download the `.dmg` from [releases](../../releases) and drag the app into `/Applications`.
 
-Приложение подписано ad-hoc, без сертификата разработчика Apple, поэтому при первом запуске Gatekeeper его заблокирует. Открыть один раз через правый клик → **Открыть** → подтвердить, дальше запускается обычным способом. Либо снять карантин вручную:
+The app is ad-hoc signed, without an Apple developer certificate, so Gatekeeper blocks the first launch. Open it once via right click → **Open** → confirm, and it launches normally from then on. Or clear the quarantine flag yourself:
 
 ```bash
 xattr -d com.apple.quarantine /Applications/ClaudeLimits.app
 ```
 
-Приложение живёт только в меню-баре — иконки в Dock и окна у него нет.
+The app lives in the menu bar only — no Dock icon, no window.
 
-## Сборка из исходников
+## Language
+
+English and Russian. By default the app follows the system, including the per-app language macOS offers under **Settings → General → Language & Region → Applications**. The **Language** submenu overrides that choice with `Automatic`, `English` or `Русский`, and applies it immediately without a restart.
+
+## Build from source
 
 ```bash
-./build.sh      # selftest → release-сборка → иконка → ClaudeLimits.app
-./make-dmg.sh   # то же плюс ClaudeLimits-<версия>.dmg
+./build.sh      # selftest → release build → icon → ClaudeLimits.app
+./make-dmg.sh   # the same, plus ClaudeLimits-<version>.dmg
 ```
 
-Нужен Xcode с тулчейном Swift 6 и macOS 13+.
+Requires Xcode with a Swift 6 toolchain and macOS 13+.
 
-Проверка парсинга и форматирования без запуска UI:
+To check parsing and formatting without launching the UI:
 
 ```bash
 swift run ClaudeLimits --selftest
 ```
 
-## Как это работает
+## How it works
 
-Приложение читает OAuth-токен, который Claude Code хранит в Keychain (`Claude Code-credentials`, с откатом на `~/.claude/.credentials.json`), и раз в 5 минут — а также при каждом открытии меню — запрашивает:
+The app reads the OAuth token Claude Code keeps in the keychain (`Claude Code-credentials`, falling back to `~/.claude/.credentials.json`), and every five minutes — plus whenever the menu opens — requests:
 
 ```
 GET https://api.anthropic.com/api/oauth/usage
-Authorization: Bearer <токен>
+Authorization: Bearer <token>
 anthropic-beta: oauth-2025-04-20
 ```
 
-Проценты берутся из массива `limits`, а не из полей верхнего уровня вроде `seven_day_opus` — те приходят `null`. Подпись модельного лимита читается из `scope.model.display_name`, поэтому переименование модели не требует правок в коде.
+Percentages come from the `limits` array rather than top-level fields like `seven_day_opus`, which the API returns as `null`. The scoped limit's label is read from `scope.model.display_name`, so renaming the model needs no code change.
 
-Токен не обновляется самим приложением: Claude Code делает это сам, а Keychain перечитывается на каждый опрос.
+The app never refreshes the token itself: Claude Code does that, and the keychain is re-read on every poll.
 
-Ничего никуда не отправляется, кроме запроса к `api.anthropic.com`. Токен не логируется и не пишется на диск.
+Nothing is sent anywhere except the request to `api.anthropic.com`. The token is never logged or written to disk.
 
-## Релизы
+## Releases
 
-Версия живёт в файле `VERSION`, оттуда её берёт `build.sh` и подставляет в `Info.plist`. Публикация:
+The version lives in the `VERSION` file, which `build.sh` stamps into `Info.plist`. To publish:
 
 ```bash
 echo "1.1.0" > VERSION
@@ -85,12 +89,12 @@ git commit -am "chore: 1.1.0" && git push
 git tag v1.1.0 && git push --tags
 ```
 
-GitHub Actions собирает `.dmg` и создаёт релиз. Workflow падает, если тег не совпадает с содержимым `VERSION`.
+GitHub Actions builds the `.dmg` and creates the release. The workflow fails if the tag and `VERSION` disagree.
 
-## Оговорка
+## Caveat
 
-Неофициальный проект, с Anthropic никак не связан. Опирается на внутренний эндпоинт Claude Code, который может измениться в любой момент — тогда приложение покажет `—` и текст ошибки в меню.
+An unofficial project, not affiliated with Anthropic. It relies on an internal Claude Code endpoint that may change at any time — when it does, the menu bar shows `—` and the menu shows the error.
 
-## Лицензия
+## License
 
 MIT

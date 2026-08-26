@@ -1,7 +1,11 @@
 import Foundation
 
 struct LimitRow: Sendable {
-    let title: String
+    /// "session", "weekly_all" or "weekly_scoped" — kept raw so the title can be
+    /// localized at render time rather than frozen when the response was parsed.
+    let kind: String
+    /// Model name for a scoped limit, straight from the API.
+    let scopeName: String?
     let percent: Int
     let severity: String
     let resetsAt: Date?
@@ -18,7 +22,7 @@ enum UsageError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noToken: return "Токен Claude Code не найден"
+        case .noToken: return L.s.noToken
         case .http(let code): return "HTTP \(code)"
         }
     }
@@ -63,25 +67,16 @@ enum UsageAPI {
 
         return limits.compactMap { entry in
             guard let kind = entry["kind"] as? String,
+                  ["session", "weekly_all", "weekly_scoped"].contains(kind),
                   let percent = entry["percent"] as? Double
             else { return nil }
 
-            let title: String
-            switch kind {
-            case "session":
-                title = "Сессия"
-            case "weekly_all":
-                title = "Все модели"
-            case "weekly_scoped":
-                let scope = entry["scope"] as? [String: Any]
-                let model = scope?["model"] as? [String: Any]
-                title = (model?["display_name"] as? String) ?? "Модель"
-            default:
-                return nil
-            }
+            let scope = entry["scope"] as? [String: Any]
+            let model = scope?["model"] as? [String: Any]
 
             return LimitRow(
-                title: title,
+                kind: kind,
+                scopeName: model?["display_name"] as? String,
                 percent: Int(percent.rounded()),
                 severity: (entry["severity"] as? String) ?? "normal",
                 resetsAt: parseDate(entry["resets_at"] as? String)

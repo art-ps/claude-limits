@@ -21,7 +21,8 @@ func runSelfTest() {
 
     assert(rows.count == 3, "expected 3 rows, got \(rows.count)")
     assert(rows.map(\.percent) == [20, 72, 58], "percents: \(rows.map(\.percent))")
-    assert(rows.map(\.title) == ["Сессия", "Все модели", "Fable"], "titles: \(rows.map(\.title))")
+    assert(rows.map(\.kind) == ["session", "weekly_all", "weekly_scoped"], "kinds: \(rows.map(\.kind))")
+    assert(rows[2].scopeName == "Fable", "scope name: \(String(describing: rows[2].scopeName))")
 
     assert(rows.map(\.severity) == ["normal", "warning", "critical"], "severities: \(rows.map(\.severity))")
     assert(AppDelegate.color(for: "normal") == .labelColor)
@@ -33,9 +34,20 @@ func runSelfTest() {
     assert(AppDelegate.progressBarImage(percent: 58, severity: "normal").size.width == 210)
 
     let reset = rows[0].resetsAt!
-    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-4260)) == "1 ч 11 мин")
-    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-1800)) == "30 мин")
-    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(60)) == "0 мин")
+    let saved = L.preference
 
-    print("selftest ok: \(rows.map { "\($0.title)=\($0.percent)%" }.joined(separator: ", "))")
+    L.preference = .en
+    assert(AppDelegate.title(for: rows[0]) == "Session")
+    assert(AppDelegate.title(for: rows[2]) == "Fable", "scoped title comes from the API, not a translation")
+    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-4260)) == "1 h 11 min")
+    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-1800)) == "30 min")
+    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(60)) == "0 min")
+
+    L.preference = .ru
+    assert(AppDelegate.title(for: rows[1]) == "Все модели")
+    assert(AppDelegate.remaining(until: reset, now: reset.addingTimeInterval(-4260)) == "1 ч 11 мин")
+
+    L.preference = saved
+
+    print("selftest ok: \(rows.map { "\($0.kind)=\($0.percent)%" }.joined(separator: ", "))")
 }
