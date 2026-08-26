@@ -3,6 +3,7 @@ import Foundation
 struct LimitRow: Sendable {
     let title: String
     let percent: Int
+    let severity: String
     let resetsAt: Date?
 }
 
@@ -82,6 +83,7 @@ enum UsageAPI {
             return LimitRow(
                 title: title,
                 percent: Int(percent.rounded()),
+                severity: (entry["severity"] as? String) ?? "normal",
                 resetsAt: parseDate(entry["resets_at"] as? String)
             )
         }

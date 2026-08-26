@@ -6,10 +6,14 @@ cd "$(dirname "$0")"
 swift run ClaudeLimits --selftest
 swift build -c release
 
+swift Tools/make-icon.swift .build
+iconutil -c icns .build/AppIcon.iconset -o .build/AppIcon.icns
+
 APP="ClaudeLimits.app"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/ClaudeLimits "$APP/Contents/MacOS/ClaudeLimits"
+cp .build/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -20,6 +24,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleDisplayName</key>     <string>Claude Limits</string>
     <key>CFBundleIdentifier</key>      <string>in.pisarev.ClaudeLimits</string>
     <key>CFBundleExecutable</key>      <string>ClaudeLimits</string>
+    <key>CFBundleIconFile</key>        <string>AppIcon</string>
     <key>CFBundlePackageType</key>     <string>APPL</string>
     <key>CFBundleShortVersionString</key> <string>1.0</string>
     <key>CFBundleVersion</key>         <string>1</string>
